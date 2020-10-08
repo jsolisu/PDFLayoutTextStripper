@@ -44,7 +44,7 @@
  */
 
 
-package io.github.jonathanlink;
+package pdfreader;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -75,25 +75,27 @@ public class PDFLayoutTextStripper extends PDFTextStripper {
 
     /**
     * Constructor
+     * @throws java.io.IOException
     */
     public PDFLayoutTextStripper() throws IOException {
         super();
         this.previousTextPosition = null;
-        this.textLineList = new ArrayList<TextLine>();
+        this.textLineList = new ArrayList<>();
     }
 
     /**
     * 
     * @param page page to parse
+     * @throws java.io.IOException
     */
     @Override
     public void processPage(PDPage page) throws IOException {
         PDRectangle pageRectangle = page.getMediaBox();
         if (pageRectangle!= null) {
-            this.setCurrentPageWidth(pageRectangle.getWidth());
+            this.setCurrentPageWidth(pageRectangle.getWidth()+500);
             super.processPage(page);
             this.previousTextPosition = null;
-            this.textLineList = new ArrayList<TextLine>();
+            this.textLineList = new ArrayList<>();
         }
     }
 
@@ -148,7 +150,7 @@ public class PDFLayoutTextStripper extends PDFTextStripper {
     }
 
     private void iterateThroughTextList(Iterator<TextPosition> textIterator) {
-        List<TextPosition> textPositionList = new ArrayList<TextPosition>();
+        List<TextPosition> textPositionList = new ArrayList<>();
 
         while ( textIterator.hasNext() ) {
             TextPosition textPosition = (TextPosition)textIterator.next();
@@ -190,6 +192,10 @@ public class PDFLayoutTextStripper extends PDFTextStripper {
         if ( textYPosition > previousTextYPosition && (textYPosition - previousTextYPosition > 5.5) ) {
             double height = textPosition.getHeight();
             int numberOfLines = (int) (Math.floor( textYPosition - previousTextYPosition) / height );
+            // set numberOfLines to 3 if greater than 3 as it was giving huge vertical spaces            
+			if (numberOfLines > 3) {
+				numberOfLines = 3;
+			}
             numberOfLines = Math.max(1, numberOfLines - 1); // exclude current new line
             if (DEBUG) System.out.println(height + " " + numberOfLines);
             return numberOfLines ;
@@ -229,7 +235,7 @@ public class PDFLayoutTextStripper extends PDFTextStripper {
 class TextLine {
 
     private static final char SPACE_CHARACTER = ' ';
-    private int lineLength;
+    private final int lineLength;
     private String line;
     private int lastIndex;
 
@@ -280,7 +286,8 @@ class TextLine {
     }
 
     private boolean isSpaceCharacterAtIndex(int index) {
-        return this.line.charAt(index) != SPACE_CHARACTER;
+    	// made index to return positive value as it was crashing for some PDFs where it had blank page
+        return this.line.charAt(index+1) != SPACE_CHARACTER;
     }
 
     private boolean isNewIndexGreaterThanLastIndex(int index) {
@@ -330,14 +337,14 @@ class TextLine {
 }
 
 
-class Character {
+final class Character {
 
-    private char characterValue;
+    private final char characterValue;
     private int index;
-    private boolean isCharacterPartOfPreviousWord;
-    private boolean isFirstCharacterOfAWord;
-    private boolean isCharacterAtTheBeginningOfNewLine;
-    private boolean isCharacterCloseToPreviousWord;
+    private final boolean isCharacterPartOfPreviousWord;
+    private final boolean isFirstCharacterOfAWord;
+    private final boolean isCharacterAtTheBeginningOfNewLine;
+    private final boolean isCharacterCloseToPreviousWord;
 
     public Character(char characterValue, int index, boolean isCharacterPartOfPreviousWord, boolean isFirstCharacterOfAWord, boolean isCharacterAtTheBeginningOfNewLine, boolean isCharacterPartOfASentence) {
         this.characterValue = characterValue;
@@ -396,7 +403,7 @@ class Character {
 class CharacterFactory {
 
     private TextPosition previousTextPosition;
-    private boolean firstCharacterOfLineFound;
+    private final boolean firstCharacterOfLineFound;
     private boolean isCharacterPartOfPreviousWord;
     private boolean isFirstCharacterOfAWord;
     private boolean isCharacterAtTheBeginningOfNewLine;
