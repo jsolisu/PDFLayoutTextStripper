@@ -44,7 +44,7 @@
  */
 
 
-package pdfreader;
+package io.github.jonathanlink;
 
 import java.io.IOException;
 import java.util.ArrayList;
